@@ -138,13 +138,15 @@ export default function Page({ params }: { params: { id: string } }) {
 
 function ExtLink({ href, children, small }: { href: string; children: React.ReactNode; small?: boolean }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className={["editorial-link block text-accent", small ? "text-xs text-accent/80" : ""].join(" ")}
-    >
-      {children} ↗
-    </a>
+    <div>
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className={["editorial-link text-accent", small ? "text-xs text-accent/80" : ""].join(" ")}
+      >
+        {children} ↗
+      </a>
+    </div>
   );
 }
