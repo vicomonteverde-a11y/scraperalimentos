@@ -28,6 +28,15 @@ export type Empresa = {
   rubros_sifega: number;
   avisos_distress: number;
   senales: string[];
+  resena: string | null;
+  productos: string[];
+  web: string | null;
+  linkedin: string | null;
+  fuentes: string[];
+  nota_prioridad: string | null;
+  linkedin_busqueda: string;
+  linkedin_personas: string;
+  google_linkedin: string;
 };
 
 type Dataset = {

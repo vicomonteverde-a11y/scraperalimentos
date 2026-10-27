@@ -57,7 +57,53 @@ export default function Page({ params }: { params: { id: string } }) {
         </div>
       </header>
 
-      <section className="reveal reveal-1 grid grid-cols-1 gap-px bg-border/50 md:grid-cols-2">
+      <section className="reveal reveal-1 grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div className="md:col-span-2">
+          <div className="mb-2 text-[10px] uppercase tracking-[0.22em] text-muted">Reseña</div>
+          <p className="text-base leading-relaxed">
+            {e.resena ?? "Todavía no investigada. Usá los links de LinkedIn y Google de la derecha para un primer vistazo."}
+          </p>
+          {e.nota_prioridad && (
+            <p className="mt-3 text-sm italic text-accent">{e.nota_prioridad}</p>
+          )}
+          {e.productos.length > 0 && (
+            <>
+              <div className="mb-2 mt-6 text-[10px] uppercase tracking-[0.22em] text-muted">Productos destacados</div>
+              <ul className="space-y-1 text-sm">
+                {e.productos.map((p) => (
+                  <li key={p} className="flex gap-2">
+                    <span className="text-accent">·</span>
+                    {p}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+        <div className="space-y-3 rounded-sm border border-border bg-surface p-5 text-sm">
+          <div className="text-[10px] uppercase tracking-[0.22em] text-muted">Referencias</div>
+          {e.web && <ExtLink href={e.web}>Sitio web</ExtLink>}
+          {e.linkedin ? (
+            <ExtLink href={e.linkedin}>LinkedIn (perfil encontrado)</ExtLink>
+          ) : (
+            <ExtLink href={e.linkedin_busqueda}>Buscar la empresa en LinkedIn</ExtLink>
+          )}
+          <ExtLink href={e.linkedin_personas}>Gente vinculada en LinkedIn</ExtLink>
+          <ExtLink href={e.google_linkedin}>Google: menciones en LinkedIn</ExtLink>
+          {e.fuentes.length > 0 && (
+            <>
+              <div className="pt-2 text-[10px] uppercase tracking-[0.22em] text-muted">Fuentes</div>
+              {e.fuentes.map((f) => (
+                <ExtLink key={f} href={f} small>
+                  {new URL(f).hostname.replace(/^www\./, "")}
+                </ExtLink>
+              ))}
+            </>
+          )}
+        </div>
+      </section>
+
+      <section className="reveal reveal-2 grid grid-cols-1 gap-px bg-border/50 md:grid-cols-2">
         {filas.map(([k, v]) => (
           <div key={k} className="bg-surface p-5">
             <div className="mb-1 text-[10px] uppercase tracking-[0.22em] text-muted">{k}</div>
@@ -66,7 +112,7 @@ export default function Page({ params }: { params: { id: string } }) {
         ))}
       </section>
 
-      <section className="reveal reveal-2 rounded-sm border border-dashed border-border bg-surface/50 p-6 text-sm text-muted">
+      <section className="reveal reveal-3 rounded-sm border border-dashed border-border bg-surface/50 p-6 text-sm text-muted">
         <div className="mb-2 font-serif text-xl text-text">Próximo paso</div>
         Validar con el contador, el banco o un proveedor si hay hijos en el negocio y si el dueño
         consideraría una salida. Edad estimada por número de DNI (±2-3 años) solo cuando el Boletín
@@ -87,5 +133,18 @@ export default function Page({ params }: { params: { id: string } }) {
         )}
       </section>
     </div>
+  );
+}
+
+function ExtLink({ href, children, small }: { href: string; children: React.ReactNode; small?: boolean }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className={["editorial-link block text-accent", small ? "text-xs text-accent/80" : ""].join(" ")}
+    >
+      {children} ↗
+    </a>
   );
 }

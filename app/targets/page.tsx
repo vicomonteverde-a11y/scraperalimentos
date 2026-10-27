@@ -59,7 +59,7 @@ export default function Page({ searchParams }: { searchParams: SP }) {
                 <th className="border-b border-border pb-3 pr-4">Zona</th>
                 <th className="border-b border-border pb-3 pr-4">Origen</th>
                 <th className="border-b border-border pb-3 pr-4">Señales</th>
-                <th className="border-b border-border pb-3 pr-4">BCRA</th>
+                <th className="border-b border-border pb-3 pr-4">BCRA · LinkedIn</th>
                 <th className="border-b border-border pb-3 pr-4 text-right">Score</th>
               </tr>
             </thead>
@@ -72,6 +72,11 @@ export default function Page({ searchParams }: { searchParams: SP }) {
                   <td className="border-b border-border/50 py-4 pr-4">
                     <Link href={`/empresa/${t.id}`} className="editorial-link block">
                       <div className="font-medium">{t.razon_social}</div>
+                      {t.resena && (
+                        <div className="mt-1 max-w-md text-xs leading-snug text-muted">
+                          {t.resena.length > 140 ? t.resena.slice(0, 140) + "…" : t.resena}
+                        </div>
+                      )}
                       <div className="font-mono text-[11px] text-muted">
                         {t.cuit ?? "sin CUIT"}
                         {t.presidente && <span className="ml-2 text-accent/80">· {t.presidente}</span>}
@@ -99,6 +104,16 @@ export default function Page({ searchParams }: { searchParams: SP }) {
                   </td>
                   <td className="border-b border-border/50 py-4 pr-4 font-mono text-[11px] text-muted">
                     {situacionBCRA(t)}
+                    <div className="mt-1">
+                      <a
+                        href={t.linkedin ?? t.linkedin_busqueda}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-accent/80 hover:text-accent"
+                      >
+                        {t.linkedin ? "LinkedIn ↗" : "buscar en LinkedIn ↗"}
+                      </a>
+                    </div>
                   </td>
                   <td className="tabular border-b border-border/50 py-4 pr-4 text-right font-mono text-lg">
                     {t.score}
