@@ -37,6 +37,11 @@ export type Empresa = {
   linkedin_busqueda: string;
   linkedin_personas: string;
   google_linkedin: string;
+  motivo_descarte: string | null;
+  facturacion_categoria: string;
+  facturacion_usd: string;
+  facturacion_base: string;
+  facturacion_confianza: string;
 };
 
 type Dataset = {
@@ -48,9 +53,10 @@ type Dataset = {
     con_historia_bo: number;
   };
   empresas: Empresa[];
+  metodo_facturacion?: string;
 };
 
-const data = raw as Dataset;
+const data = raw as unknown as Dataset;
 
 export const ZONAS = ["CABA", "GBA norte", "GBA noroeste", "GBA oeste", "GBA sur", "Gran La Plata", "Interior"];
 
@@ -84,4 +90,8 @@ export function situacionBCRA(e: Empresa): string {
   return ["", "1 · normal", "2 · seguimiento", "3 · con problemas", "4 · alto riesgo", "5 · irrecuperable"][
     e.bcra_situacion
   ];
+}
+
+export function metodoFacturacion(): string {
+  return data.metodo_facturacion ?? "";
 }

@@ -59,6 +59,7 @@ export default function Page({ searchParams }: { searchParams: SP }) {
                 <th className="border-b border-border pb-3 pr-4">Zona</th>
                 <th className="border-b border-border pb-3 pr-4">Origen</th>
                 <th className="border-b border-border pb-3 pr-4">Señales</th>
+                <th className="border-b border-border pb-3 pr-4">Facturación est.</th>
                 <th className="border-b border-border pb-3 pr-4">BCRA · LinkedIn</th>
                 <th className="border-b border-border pb-3 pr-4 text-right">Score</th>
               </tr>
@@ -72,6 +73,11 @@ export default function Page({ searchParams }: { searchParams: SP }) {
                   <td className="border-b border-border/50 py-4 pr-4">
                     <Link href={`/empresa/${t.id}`} className="editorial-link block">
                       <div className="font-medium">{t.razon_social}</div>
+                      {t.motivo_descarte && (
+                        <div className="mt-1 max-w-md text-xs font-medium leading-snug text-accent">
+                          Descartada: {t.motivo_descarte}
+                        </div>
+                      )}
                       {t.resena && (
                         <div className="mt-1 max-w-md text-xs leading-snug text-muted">
                           {t.resena.length > 140 ? t.resena.slice(0, 140) + "…" : t.resena}
@@ -101,6 +107,10 @@ export default function Page({ searchParams }: { searchParams: SP }) {
                       ))}
                       {!t.fuente.startsWith("SIFEGA") && <Pill subtle>sin planta confirmada</Pill>}
                     </div>
+                  </td>
+                  <td className="border-b border-border/50 py-4 pr-4 font-mono text-[11px]">
+                    <div>{t.facturacion_usd}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted">{t.facturacion_categoria}</div>
                   </td>
                   <td className="border-b border-border/50 py-4 pr-4 font-mono text-[11px] text-muted">
                     {situacionBCRA(t)}

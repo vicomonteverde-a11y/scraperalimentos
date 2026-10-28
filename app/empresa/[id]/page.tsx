@@ -1,7 +1,7 @@
 import PriorityBadge from "@/components/PriorityBadge";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { edadEstimada, empresa, empresas, situacionBCRA } from "@/lib/data";
+import { edadEstimada, empresa, empresas, metodoFacturacion, situacionBCRA } from "@/lib/data";
 
 export function generateStaticParams() {
   return empresas().map((e) => ({ id: e.id }));
@@ -25,6 +25,8 @@ export default function Page({ params }: { params: { id: string } }) {
     ["Rubros SIFEGA", e.rubros_sifega || "—"],
     ["BCRA (peor situación)", situacionBCRA(e)],
     ["Deuda bancaria", e.deuda_millones != null ? `$${e.deuda_millones.toLocaleString("es-AR")} M` : "—"],
+    ["Facturación estimada", `${e.facturacion_usd} · ${e.facturacion_categoria}`],
+    ["Base de la estimación", `${e.facturacion_base} Confianza: ${e.facturacion_confianza}.`],
     ["Cheques rechazados 12 meses", e.cheques_12m ?? "—"],
     ["Avisos de concurso / quiebra / remate", e.avisos_distress],
   ];
@@ -56,6 +58,13 @@ export default function Page({ params }: { params: { id: string } }) {
           </div>
         </div>
       </header>
+
+      {e.motivo_descarte && (
+        <div className="reveal rounded-sm border border-accent/60 bg-accent/10 p-5">
+          <div className="mb-1 text-[10px] uppercase tracking-[0.22em] text-accent">Por qué está descartada</div>
+          <p className="text-base">{e.motivo_descarte}</p>
+        </div>
+      )}
 
       <section className="reveal reveal-1 grid grid-cols-1 gap-8 md:grid-cols-3">
         <div className="md:col-span-2">
@@ -116,7 +125,7 @@ export default function Page({ params }: { params: { id: string } }) {
         <div className="mb-2 font-serif text-xl text-text">Próximo paso</div>
         Validar con el contador, el banco o un proveedor si hay hijos en el negocio y si el dueño
         consideraría una salida. Edad estimada por número de DNI (±2-3 años) solo cuando el Boletín
-        Oficial publicó el DNI.
+        Oficial publicó el DNI. {metodoFacturacion()}
         {e.cuit && (
           <>
             {" "}
