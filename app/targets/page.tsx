@@ -1,39 +1,16 @@
-import { supabase, type TopTarget } from "@/lib/supabase";
 import PriorityBadge from "@/components/PriorityBadge";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
+import { empresas, situacionBCRA, ZONAS } from "@/lib/data";
 
-export const revalidate = 60;
+type SP = { zona?: string; prioridad?: string; fuente?: string };
 
-const PARTIDOS = [
-  "PILAR",
-  "ESCOBAR",
-  "GENERAL RODRIGUEZ",
-  "LUJAN",
-  "MORENO",
-  "MARCOS PAZ",
-  "MERCEDES",
-  "EXALTACION DE LA CRUZ",
-];
-
-async function getTargets(partido?: string, prioridad?: string) {
-  let q = supabase
-    .from("vw_top_targets")
-    .select("*")
-    .order("score_target", { ascending: false })
-    .limit(200);
-  if (partido) q = q.eq("partido_principal", partido);
-  if (prioridad) q = q.eq("prioridad", prioridad);
-  const { data } = await q;
-  return (data ?? []) as TopTarget[];
-}
-
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: { partido?: string; prioridad?: string };
-}) {
-  const targets = await getTargets(searchParams.partido, searchParams.prioridad);
+export default function Page({ searchParams }: { searchParams: SP }) {
+  let targets = empresas();
+  if (searchParams.zona) targets = targets.filter((t) => t.zona === searchParams.zona);
+  if (searchParams.prioridad) targets = targets.filter((t) => t.prioridad === searchParams.prioridad);
+  else targets = targets.filter((t) => t.prioridad !== "X");
+  if (searchParams.fuente === "planta") targets = targets.filter((t) => t.fuente.startsWith("SIFEGA"));
 
   return (
     <div className="space-y-8">
@@ -43,59 +20,35 @@ export default async function Page({
         </div>
         <h1 className="font-serif text-4xl md:text-5xl">Top Targets</h1>
         <p className="mt-3 max-w-2xl text-muted">
-          Empresas ordenadas por score de adquisición. Mayor score = mejor match
-          contra la tesis (marca antigua, planta flexible, distress, etc.).
+          Ordenadas por prioridad y score de sucesión. El score prioriza llamados; si hay sucesor lo
+          confirma el contador, el banco o el proveedor.
         </p>
       </header>
 
-      {/* Filtros */}
-      <div className="reveal reveal-1 flex flex-wrap items-center gap-2 border-y border-border py-4">
-        <span className="mr-2 text-[10px] uppercase tracking-[0.22em] text-muted">
-          Partido
-        </span>
-        <FilterLink param="partido" value={undefined} current={searchParams.partido}>
-          todos
-        </FilterLink>
-        {PARTIDOS.map((p) => (
-          <FilterLink
-            key={p}
-            param="partido"
-            value={p}
-            current={searchParams.partido}
-          >
-            {p.toLowerCase()}
-          </FilterLink>
-        ))}
-        <div className="ml-auto flex items-center gap-2">
-          <span className="mr-2 text-[10px] uppercase tracking-[0.22em] text-muted">
-            Prioridad
-          </span>
-          <FilterLink
-            param="prioridad"
-            value={undefined}
-            current={searchParams.prioridad}
-          >
-            todas
-          </FilterLink>
-          {["A", "B", "C"].map((p) => (
-            <FilterLink
-              key={p}
-              param="prioridad"
-              value={p}
-              current={searchParams.prioridad}
-            >
-              {p}
+      <div className="reveal reveal-1 space-y-3 border-y border-border py-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="mr-2 w-16 text-[10px] uppercase tracking-[0.22em] text-muted">Zona</span>
+          <FilterLink sp={searchParams} param="zona" value={undefined}>todas</FilterLink>
+          {ZONAS.map((z) => (
+            <FilterLink key={z} sp={searchParams} param="zona" value={z}>
+              {z.toLowerCase()}
             </FilterLink>
           ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="mr-2 w-16 text-[10px] uppercase tracking-[0.22em] text-muted">Prioridad</span>
+          <FilterLink sp={searchParams} param="prioridad" value={undefined}>a + b</FilterLink>
+          <FilterLink sp={searchParams} param="prioridad" value="A">A · llamar</FilterLink>
+          <FilterLink sp={searchParams} param="prioridad" value="B">B · revisar</FilterLink>
+          <FilterLink sp={searchParams} param="prioridad" value="X">X · descartadas</FilterLink>
+          <span className="ml-6 mr-2 text-[10px] uppercase tracking-[0.22em] text-muted">Fuente</span>
+          <FilterLink sp={searchParams} param="fuente" value={undefined}>todas</FilterLink>
+          <FilterLink sp={searchParams} param="fuente" value="planta">planta confirmada</FilterLink>
         </div>
       </div>
 
       {targets.length === 0 ? (
-        <EmptyState
-          title="Sin candidatos todavía"
-          description="Cuando corras los scrapers y ejecutes refresh_empresas() en Supabase, los candidatos van a aparecer acá."
-          hint="Asegurate de que las empresas tengan partido asignado y score ≥ 50."
-        />
+        <EmptyState title="Sin candidatos con este filtro" description="Probá con otra zona o prioridad." />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-separate border-spacing-0">
@@ -103,74 +56,77 @@ export default async function Page({
               <tr className="text-left text-[10px] uppercase tracking-[0.2em] text-muted">
                 <th className="border-b border-border pb-3 pr-4">P</th>
                 <th className="border-b border-border pb-3 pr-4">Empresa</th>
-                <th className="border-b border-border pb-3 pr-4">Partido</th>
-                <th className="border-b border-border pb-3 pr-4">Marcas</th>
+                <th className="border-b border-border pb-3 pr-4">Zona</th>
+                <th className="border-b border-border pb-3 pr-4">Origen</th>
                 <th className="border-b border-border pb-3 pr-4">Señales</th>
-                <th className="border-b border-border pb-3 pr-4 text-right">
-                  Score
-                </th>
-                <th className="border-b border-border pb-3 pr-4">Status</th>
+                <th className="border-b border-border pb-3 pr-4">Facturación est.</th>
+                <th className="border-b border-border pb-3 pr-4">BCRA · LinkedIn</th>
+                <th className="border-b border-border pb-3 pr-4 text-right">Score</th>
               </tr>
             </thead>
             <tbody>
               {targets.map((t, i) => (
-                <tr
-                  key={t.id}
-                  className="row-hover reveal"
-                  style={{ animationDelay: `${Math.min(i * 30, 600)}ms` }}
-                >
+                <tr key={t.id} className="row-hover reveal" style={{ animationDelay: `${Math.min(i * 20, 500)}ms` }}>
                   <td className="border-b border-border/50 py-4 pr-4">
                     <PriorityBadge priority={t.prioridad} />
                   </td>
                   <td className="border-b border-border/50 py-4 pr-4">
-                    <Link
-                      href={`/empresa/${t.id}`}
-                      className="editorial-link block"
-                    >
-                      <div className="font-medium">
-                        {t.razon_social || t.nombre_fantasia || "(sin nombre)"}
-                      </div>
+                    <Link href={`/empresa/${t.id}`} className="editorial-link block">
+                      <div className="font-medium">{t.razon_social}</div>
+                      {t.motivo_descarte && (
+                        <div className="mt-1 max-w-md text-xs font-medium leading-snug text-accent">
+                          Descartada: {t.motivo_descarte}
+                        </div>
+                      )}
+                      {t.resena && (
+                        <div className="mt-1 max-w-md text-xs leading-snug text-muted">
+                          {t.resena.length > 140 ? t.resena.slice(0, 140) + "…" : t.resena}
+                        </div>
+                      )}
                       <div className="font-mono text-[11px] text-muted">
-                        {t.cuit}
-                        {t.marcas_vigentes && (
-                          <span className="ml-2 text-accent/80">
-                            · {t.marcas_vigentes.split(",").slice(0, 2).join(",")}
-                            {t.marcas_vigentes.split(",").length > 2 && "…"}
-                          </span>
-                        )}
+                        {t.cuit ?? "sin CUIT"}
+                        {t.presidente && <span className="ml-2 text-accent/80">· {t.presidente}</span>}
                       </div>
                     </Link>
                   </td>
-                  <td className="border-b border-border/50 py-4 pr-4 font-mono text-xs uppercase">
-                    {t.partido_principal || "—"}
-                  </td>
                   <td className="border-b border-border/50 py-4 pr-4">
-                    <div className="tabular font-mono text-sm">
-                      <span className="text-success">{t.cantidad_marcas_vigentes}</span>
-                      <span className="mx-1 text-muted">/</span>
-                      <span className="text-muted">{t.cantidad_marcas_caducas}</span>
-                    </div>
+                    <div className="font-mono text-xs uppercase">{t.partidos.join(" / ")}</div>
                     <div className="text-[10px] uppercase tracking-wider text-muted">
-                      vig / cad
+                      {t.zona} · {t.km_pilar ?? "?"} km
                     </div>
+                  </td>
+                  <td className="tabular border-b border-border/50 py-4 pr-4 font-mono text-sm">
+                    {t.anio_origen ?? "—"}
                   </td>
                   <td className="border-b border-border/50 py-4 pr-4">
                     <div className="flex flex-wrap gap-1">
-                      {t.marca_antigua && <Pill>marca 20+</Pill>}
-                      {t.multi_rubro && <Pill>multi-rubro</Pill>}
-                      {t.rne_dado_baja && t.cantidad_marcas_vigentes > 0 && (
-                        <Pill highlight>marca dormida</Pill>
-                      )}
-                      {t.rne_vigente && <Pill subtle>operativa</Pill>}
+                      {t.senales.map((s) => (
+                        <Pill key={s} highlight={s.startsWith("familia") || s.startsWith("autoridad")}>
+                          {s}
+                        </Pill>
+                      ))}
+                      {!t.fuente.startsWith("SIFEGA") && <Pill subtle>sin planta confirmada</Pill>}
+                    </div>
+                  </td>
+                  <td className="border-b border-border/50 py-4 pr-4 font-mono text-[11px]">
+                    <div>{t.facturacion_usd}</div>
+                    <div className="text-[10px] uppercase tracking-wider text-muted">{t.facturacion_categoria}</div>
+                  </td>
+                  <td className="border-b border-border/50 py-4 pr-4 font-mono text-[11px] text-muted">
+                    {situacionBCRA(t)}
+                    <div className="mt-1">
+                      <a
+                        href={t.linkedin ?? t.linkedin_busqueda}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-accent/80 hover:text-accent"
+                      >
+                        {t.linkedin ? "LinkedIn ↗" : "buscar en LinkedIn ↗"}
+                      </a>
                     </div>
                   </td>
                   <td className="tabular border-b border-border/50 py-4 pr-4 text-right font-mono text-lg">
-                    {t.score_target}
-                  </td>
-                  <td className="border-b border-border/50 py-4 pr-4">
-                    <span className="rounded-sm border border-border bg-elevated px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-muted">
-                      {t.status}
-                    </span>
+                    {t.score}
                   </td>
                 </tr>
               ))}
@@ -183,21 +139,23 @@ export default async function Page({
 }
 
 function FilterLink({
+  sp,
   param,
   value,
-  current,
   children,
 }: {
-  param: string;
+  sp: SP;
+  param: keyof SP;
   value: string | undefined;
-  current: string | undefined;
   children: React.ReactNode;
 }) {
-  const active = (current || "") === (value || "");
-  const href = value ? `?${param}=${encodeURIComponent(value)}` : `?`;
+  const active = (sp[param] || "") === (value || "");
+  const next = new URLSearchParams();
+  Object.entries({ ...sp, [param]: value }).forEach(([k, v]) => v && next.set(k, v));
+  const qs = next.toString();
   return (
     <Link
-      href={href}
+      href={qs ? `?${qs}` : "?"}
       className={[
         "rounded-sm px-2 py-1 font-mono text-[11px] uppercase tracking-wider transition-colors",
         active
@@ -210,15 +168,7 @@ function FilterLink({
   );
 }
 
-function Pill({
-  children,
-  highlight,
-  subtle,
-}: {
-  children: React.ReactNode;
-  highlight?: boolean;
-  subtle?: boolean;
-}) {
+function Pill({ children, highlight, subtle }: { children: React.ReactNode; highlight?: boolean; subtle?: boolean }) {
   return (
     <span
       className={[
